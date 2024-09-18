@@ -9,7 +9,7 @@ library(dplyr)
 library(units)
 
 # Input parameters
-MIN_ORDER <- 4
+MIN_ORDER <- 1
 BUFFER_DIST <- 5 # km
 
 # Load data
@@ -27,7 +27,6 @@ study_area_buffered <- covariates %>%
   st_as_sfc() %>%
   st_buffer(dist = set_units(BUFFER_DIST, "km"))
 
-
 rivers_filtered <- rivers %>%
   filter(strmOrder >= MIN_ORDER) %>%
   st_filter(study_area_buffered)
@@ -36,4 +35,14 @@ rivers_filtered <- rivers %>%
 
 rivers_rast <- rasterize(rivers_filtered, covariates, field = 1)
 
-dist_to_river <- distance(rivers_rast)
+rivers_rast_reproject <- project(rivers_rast, "ESRI:54034")
+
+dist_to_river <- distance(rivers_rast_reproject)
+
+dist_to_river_sa <- dist_to_river %>%
+  project(covariates$DEM) %>%
+  mask(covariates$DEM)
+
+writeRaster(dist_to_river_sa, paste0("data/processed/raster/dist_to_river_", MIN_ORDER, ".tif"))
+
+beepr::beep(3)
