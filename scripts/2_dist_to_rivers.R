@@ -3,10 +3,7 @@
 ## Guy Lomax
 ## G.Lomax@exeter.ac.uk
 
-library(terra)
-library(sf)
-library(dplyr)
-library(units)
+source("scripts/load.R")
 
 # Input parameters
 MIN_ORDER <- 1
@@ -43,6 +40,6 @@ dist_to_river_sa <- dist_to_river %>%
   project(covariates$DEM) %>%
   mask(covariates$DEM)
 
-writeRaster(dist_to_river_sa, paste0("data/processed/raster/dist_to_river_", MIN_ORDER, ".tif"))
+names(dist_to_river_sa) <- "dist_to_river"
 
-beepr::beep(3)
+writeRaster(dist_to_river_sa, paste0("data/processed/raster/dist_to_river_", MIN_ORDER, ".tif"))

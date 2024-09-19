@@ -3,11 +3,7 @@
 ## Guy Lomax
 ## G.Lomax@exeter.ac.uk
 
-library(terra)
-library(raster)
-library(sf)
-library(tmap)
-library(whitebox)
+source("scripts/load.R")
 
 tmap_mode("view")
 
@@ -16,7 +12,7 @@ wbt_init()
 # Load data and join
 
 merit_dem <- rast("data/raw/raster/merit/meritDem.tif")
-covariates <- rast("data/raw/raster/covariateMaps/staticVars.tif")
+covariates <- rast("data/raw/raster/covariate_maps/staticVars.tif")
 
 # Reproject DEM to equal area projection
 
