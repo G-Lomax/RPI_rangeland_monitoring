@@ -15,20 +15,7 @@ primary productivity (GPP) as a function of environmental variables
 
 ```{r setup, include = FALSE}
 
-# Data handling
-library(tidyverse)
-library(sf)
-library(here)
-
-# Analysis
-library(mlr3verse)
-library(mlr3spatiotempcv)
-library(ranger)
-library(future)
-library(tictoc)
-
-# Visualisation
-library(tmap)
+source("scripts/load.R")
 
 # # Parallelisation
 nc <- availableCores() / 4
