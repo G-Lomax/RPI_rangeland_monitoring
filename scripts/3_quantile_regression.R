@@ -126,6 +126,8 @@ task_gpp <- as_task_regr_st(
 task_gpp$set_col_roles("cell", roles = "space")
 task_gpp$set_col_roles("year", roles = "time")
 
+write_rds(task_gpp, "data/processed/rds/regr_task_gpp.rds")
+
 # Create learner (ranger random forest) with initial tuning values
 
 lrn_ranger_untuned <- lrn("regr.ranger", 
@@ -294,3 +296,4 @@ rm(rf_tuned_sp)
 gc()
 
 pushoverr::pushover("Tuning complete: Spatial block CV")
+
