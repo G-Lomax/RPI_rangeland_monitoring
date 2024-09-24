@@ -19,3 +19,4 @@ library(tictoc)
 # Visualisation
 library(ggplot2)
 library(tmap)
+library(ggthemes)
