@@ -28,3 +28,6 @@
 
 # Data folders
 /data/
+
+# Results and figures
+/results/figures/
