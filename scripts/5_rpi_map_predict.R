@@ -51,16 +51,16 @@ static_covariates_all <- c(static_covariates, pptMean, dist_to_river, twi)
 
 ## 3. Predict iteratively to raster layers
 tic()
-annual_predictions_sp <- YEARS %>%
+annual_predictions_spt <- YEARS %>%
   map(predict_to_annual_raster,
       static_vars = static_covariates_all,
       dynamic_vars = dynamic_covariates_all,
-      model = qrf_model_sp$learner$model,
+      model = qrf_model_spt$learner$model,
       threads = THREADS) %>%
   rast()
 
 toc()
 
-writeRaster(annual_predictions_sp, "data/processed/raster/rpi_rast_sp.tif")
+writeRaster(annual_predictions_spt, "data/processed/raster/rpi_rast_spt.tif")
 
 pushoverr::pushover("RPI raster written to disk")
