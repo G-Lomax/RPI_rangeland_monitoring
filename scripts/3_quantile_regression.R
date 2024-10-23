@@ -228,7 +228,8 @@ lrn_ranger_tuned_spt <- lrn(
   num.trees = 1001,
   mtry.ratio = to_tune(p_dbl(0, 1)),
   min.node.size = to_tune(p_int(100, 1000)),
-  sample.fraction = to_tune(p_dbl(0.1, 0.9))
+  sample.fraction = to_tune(p_dbl(0.1, 0.9)),
+  respect.unordered.factors = "order"
 )
 
 lrn_ranger_tuned_sp <- lrn(
@@ -240,7 +241,8 @@ lrn_ranger_tuned_sp <- lrn(
   num.trees = 1001,
   mtry.ratio = to_tune(p_dbl(0, 1)),
   min.node.size = to_tune(p_int(100, 1000)),
-  sample.fraction = to_tune(p_dbl(0.1, 0.9))
+  sample.fraction = to_tune(p_dbl(0.1, 0.9)),
+  respect.unordered.factors = "order"
 )
 
 # Define auto-tuner objects for each model
