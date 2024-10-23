@@ -21,8 +21,8 @@ rf_model_sp <- read_rds("data/processed/rds/rf_tuned_sp.rds")
 # Measures to evaluate model performance
 measures <- msrs(c("regr.mae", "regr.rmse", "regr.rsq"))
 
-rf_predictions_spt <- rf_tuned_spt$predict(task_gpp)
-rf_predictions_sp <- rf_tuned_sp$predict(task_gpp)
+rf_predictions_spt <- rf_model_spt$predict(task_gpp)
+rf_predictions_sp <- rf_model_sp$predict(task_gpp)
 
 rf_predictions_spt$score(measures)
 rf_predictions_sp$score(measures)
@@ -31,22 +31,22 @@ rf_predictions_sp$score(measures)
 
 # Extract quantile predictions
 rf_predictions_spt_qu <- predict(
-  rf_tuned_spt$learner$model,
+  rf_model_spt$learner$model,
   task_gpp$data(),
   type = "quantiles",
   quantiles = 0.9
 )
 
 rf_predictions_sp_qu <- predict(
-  rf_tuned_sp$learner$model,
+  rf_model_sp$learner$model,
   task_gpp$data(),
   type = "quantiles",
   quantiles = 0.9
 )
 
-data_with_quantiles <- task_gpp_spt$data() %>%
+data_with_quantiles <- task_gpp$data() %>%
   bind_cols(rf_predictions_spt_qu$predictions, rf_predictions_sp_qu$predictions) %>%
-  rename(quantile_pred_spt = "quantile= 0.9...16", quantile_pred_sp = "quantile= 0.9...17") %>%
+  rename(quantile_pred_spt = "quantile= 0.9...17", quantile_pred_sp = "quantile= 0.9...18") %>%
   mutate(across(.cols = c("GPP", starts_with("quantile")), .fns = ~ .x / 1000))
 
 # Plot distribution of model residuals (using 0.9 quantile) 
