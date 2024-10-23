@@ -52,3 +52,50 @@ mask_zeros <- function(raster, layer) {
   raster_masked
   
 }
+
+#' @title Extract raster values for field data points
+#' @description For field collected data points, extract the appropriate cell values
+#' from a given SpatRaster
+#' 
+#' @usage raster_extract(geom, hYear = NULL, raster)
+#' 
+#' @param geom an sfc geometry column in an sf object containing data 
+#' @param hYear numeric. The hydrological year for which to extract data.
+#' If numeric, spatRaster band names will be filtered by that year string before
+#' extraction. If NULL, all raster layers are extracted
+#' @param raster spatRaster object to extract cell values from
+
+raster_extract <- function(hYear, sf, raster) {
+  
+  sf_filter <- filter(sf, hYear == hYear)
+  
+  raster_hYear <- subset(raster, str_detect(names(raster), as.character(hYear)))
+  names(raster_hYear) <- str_replace(names(raster_hYear), paste0("\\.", as.character(hYear)), "")
+  
+  extracted <- terra::extract(raster_hYear, vect(sf_filter), cells = TRUE, ID = FALSE)
+  
+  bind_cols(sf_filter, extracted)
+
+}
+
+#' @title Check for unrecorded bare soil
+#' @description For landPKS data, create a new row recording a "bare" soil
+#' reading if there is no perennial or annual grass cover present. Otherwise,
+#' tree or shrub canopy presence prevents recording of bare soil
+#' 
+#' @usage check_bare(groups, covers = c("perennial", "annual"))
+#' 
+#' @param groups a column name in a grouped data.frame containing land cover records
+#' @param covers character. Land covers considered non-bare
+
+
+check_bare <- function(groups, covers = c("perennial", "annual")) {
+  is_bare <- sum(groups %in% covers) == 0
+  already_contains_bare <- "bare" %in% groups
+  
+  if (is_bare == TRUE & already_contains_bare == FALSE) {
+    "bare"
+  } else {
+    NA
+  }
+}
