@@ -6,12 +6,12 @@
 source("scripts/load.R")
 
 # Input parameters
-MIN_ORDER <- 1
+MIN_ORDER <- 4
 BUFFER_DIST <- 5 # km
 
 # Load data
 
-covariates <- rast("data/raw/raster/covariateMaps/staticVars.tif")
+covariates <- rast("data/raw/raster/covariate_maps/staticVars.tif")
 
 river_files <- Sys.glob("data/raw/vector/Lin_rivers/*.shp")
 rivers <- lapply(river_files, st_read) %>%
@@ -42,4 +42,5 @@ dist_to_river_sa <- dist_to_river %>%
 
 names(dist_to_river_sa) <- "dist_to_river"
 
-writeRaster(dist_to_river_sa, paste0("data/processed/raster/dist_to_river_", MIN_ORDER, ".tif"))
+writeRaster(dist_to_river_sa, paste0("data/processed/raster/dist_to_river_", MIN_ORDER, ".tif"),
+            overwrite = TRUE)
