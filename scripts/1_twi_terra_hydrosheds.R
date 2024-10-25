@@ -17,11 +17,13 @@ covariates <- rast("data/raw/raster/covariate_maps/staticVars.tif")
 # Reproject DEM to equal area projection
 
 merit_dem_reproj <- project(merit_dem, "ESRI:54034")
-writeRaster(merit_dem_reproj, "data/processed/raster/merit/meritDemReproj.tif")
+writeRaster(merit_dem_reproj, "data/processed/raster/merit/meritDemReproj.tif",
+            overwrite = TRUE)
 
 # Save slope as separate layer for Whitebox processing
 
-writeRaster(covariates$slope, "data/processed/raster/slope.tif")
+writeRaster(covariates$slope, "data/processed/raster/slope.tif",
+            overwrite = TRUE)
 
 # Calculate flow accumulation (Freeman D8) algorithm and mask to study area
 wbt_fd8_flow_accumulation(
@@ -36,7 +38,8 @@ flow_accum_sa <- flow_accum %>%
   project(covariates$DEM) %>%
   crop(covariates$DEM, mask = TRUE)
 
-writeRaster(flow_accum_sa, "data/processed/raster/merit/merit_fa_fd8_sa.tif")
+writeRaster(flow_accum_sa, "data/processed/raster/merit/merit_fa_fd8_sa.tif",
+            overwrite = TRUE)
 
 # Calculate Topographic Wetness Index
 wbt_wetness_index(
@@ -50,7 +53,7 @@ twi_fd8 <- rast("data/processed/raster/merit/merit_twi_fd8.tif")
 plot(twi_fd8, xlim = c(30, 30.5), ylim = c(-5, -4.5))
 
 # Visualise
-tmap_options(raster.max.cells = 8e6)
+tmap_options(raster.max.cells = 7e6)
 tm_shape(twi_fd8) +
   tm_raster(
     col.scale = tm_scale_continuous(
