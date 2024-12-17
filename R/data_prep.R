@@ -117,5 +117,28 @@ find_centroid <- function(geometry) {
   centroid_point <- st_point(centroid_coords)
   
   st_sfc(centroid_point, crs = "EPSG:4326")
+}
+
+#' @title Tidy annual variables
+#' @description Converts a data.frame of annual covariate values obtained
+#' from terra::extract or terra::as.data.frame to a tidy data.frame with one
+#' row per location and year
+#' 
+#' @usage tidy_annual_vars(data, delim = ".")
+#' 
+#' @param data a wide-format data.frame with column names "{var}.{year}", where
+#' the delimiter "." can be changed with the "delim" argument.
+#' @param delim character. A unique string separating the variable component
+#' of the column name from the year. It cannot be present elsewhere in the column
+#' names.
+
+tidy_annual_vars <- function(data, delim = ".") {
   
+  tidy_data <- data %>%
+    pivot_longer(cols = contains(delim)) %>%
+    separate_wider_delim(cols = "name", delim = delim, names = c("var", "year")) %>%
+    mutate(year = as.numeric(year)) %>%
+    pivot_wider(names_from = "var", values_from = "value")
+  
+  tidy_data
 }
