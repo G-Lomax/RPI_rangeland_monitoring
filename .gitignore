@@ -31,3 +31,6 @@
 
 # Results and figures
 /results/figures/
+
+# Script output files
+*.out
