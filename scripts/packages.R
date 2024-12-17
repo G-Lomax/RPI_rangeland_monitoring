@@ -18,10 +18,13 @@ library(ranger)
 library(mgcv)
 library(future)
 library(furrr)
+library(deming)
+library(rstudioapi)
 library(tictoc)
 
 # Visualisation
 library(ggplot2)
 library(tmap)
 library(ggthemes)
+library(ggpmisc)
 library(gratia)

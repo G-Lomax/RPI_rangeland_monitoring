@@ -60,17 +60,17 @@ mask_zeros <- function(raster, layer) {
 #' @usage raster_extract(geom, hYear = NULL, raster)
 #' 
 #' @param geom an sfc geometry column in an sf object containing data 
-#' @param hYear numeric. The hydrological year for which to extract data.
+#' @param hydro_year numeric. The hydrological year for which to extract data.
 #' If numeric, spatRaster band names will be filtered by that year string before
 #' extraction. If NULL, all raster layers are extracted
 #' @param raster spatRaster object to extract cell values from
 
-raster_extract <- function(hYear, sf, raster) {
+raster_extract <- function(hydro_year, sf, raster) {
   
-  sf_filter <- filter(sf, hYear == hYear)
+  sf_filter <- filter(sf, hYear == hydro_year)
   
-  raster_hYear <- subset(raster, str_detect(names(raster), as.character(hYear)))
-  names(raster_hYear) <- str_replace(names(raster_hYear), paste0("\\.", as.character(hYear)), "")
+  raster_hYear <- subset(raster, str_detect(names(raster), as.character(hydro_year)))
+  names(raster_hYear) <- str_replace(names(raster_hYear), paste0("\\.", as.character(hydro_year)), "")
   
   extracted <- terra::extract(raster_hYear, vect(sf_filter), cells = TRUE, ID = FALSE)
   
@@ -98,4 +98,24 @@ check_bare <- function(groups, covers = c("perennial", "annual")) {
   } else {
     NA
   }
+}
+
+
+#' @title Find centroid by group
+#' @description Find the centroid of a group of points
+#' 
+#' @usage find_centroid(geometry)
+#' 
+#' @param geometry An sfc column in a data frame
+
+find_centroid <- function(geometry) {
+  x <- st_coordinates(geometry)[,1]
+  y <- st_coordinates(geometry)[,2]
+  
+  centroid_coords <- c(mean(x), mean(y))
+  
+  centroid_point <- st_point(centroid_coords)
+  
+  st_sfc(centroid_point, crs = "EPSG:4326")
+  
 }
