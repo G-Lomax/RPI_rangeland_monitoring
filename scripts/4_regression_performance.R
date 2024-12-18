@@ -149,12 +149,12 @@ ggsave(
 rpi_rast <- rast("data/processed/raster/rpi_rast_sp.tif")
 rpi_rast_legacy <- rast("data/processed/raster/rpi_legacy.tif")
 
-rpi_rast_crop <- rpi_rast[[1:nlyr(rpi_rast_legacy)]] %>%
-  terra::resample(rpi_rast_legacy[[1]]) %>%
-  crop(rpi_rast_legacy[[1]], mask = TRUE)
-
 rpi_rast_legacy_crop <- rpi_rast_legacy %>%
-  crop(rpi_rast_crop[[1]], mask = TRUE)
+  terra::resample(rpi_rast[[1]]) %>%
+  crop(rpi_rast[[1]], mask = TRUE)
+
+rpi_rast_crop <- rpi_rast[[1:nlyr(rpi_rast_legacy_crop)]] %>%
+  crop(rpi_rast_legacy_crop[[1]], mask = TRUE)
 
 rpi_df <- rpi_rast_crop %>%
   as.data.frame(cells = TRUE) %>%
@@ -168,13 +168,13 @@ rpi_legacy_df <- rpi_rast_legacy_crop %>%
 
 
 # Calculate performance metrics for current and legacy model
-calc_performance <- function(truth, predicted) {
+calc_performance <- function(truth, predicted, na.rm = FALSE) {
   
   error <- predicted - truth
   
-  mae <- mean(abs(error))
-  rmse <- sqrt(mean(error ^ 2))
-  rsq <- 1 - sum((error ^ 2)) / sum((truth - mean(truth)) ^ 2)
+  mae <- mean(abs(error), na.rm = na.rm)
+  rmse <- sqrt(mean(error ^ 2, na.rm = na.rm))
+  rsq <- 1 - sum((error ^ 2), na.rm = na.rm) / sum((truth - mean(truth, na.rm = na.rm)) ^ 2, na.rm = na.rm)
   
   c(mae = mae, rmse = rmse, rsq = rsq)
   
@@ -191,15 +191,15 @@ gpp_pred <- subset(rpi_rast_crop, str_detect(names(rpi_rast_crop), regex("^gpp_p
 gpp_actual_legacy <- subset(rpi_rast_legacy_crop, str_detect(names(rpi_rast_legacy_crop), "GPP"))
 gpp_pred_legacy <- subset(rpi_rast_legacy_crop, str_detect(names(rpi_rast_legacy_crop), regex("^gpp_predicted")))
 
-calc_performance_raster <- function(truth, predicted) {
+calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
-  annual_anomaly <- truth - mean(truth)
-  pred_anomaly <- predicted - mean(predicted)
+  annual_anomaly <- truth - mean(truth, na.rm = na.rm)
+  pred_anomaly <- predicted - mean(predicted, na.rm = na.rm)
   error <- pred_anomaly - annual_anomaly
   
-  mae <- mean(abs(error), na.rm = TRUE)
-  rmse <- sqrt(mean(error ^ 2))
-  rsq <- 1 - (sum(error ^ 2) / sum(annual_anomaly ^ 2))
+  mae <- mean(abs(error), na.rm = na.rm)
+  rmse <- sqrt(mean(error ^ 2, na.rm = na.rm))
+  rsq <- 1 - (sum(error ^ 2, na.rm = na.rm) / sum(annual_anomaly ^ 2, na.rm = na.rm))
   
   output <- c(mae, rmse, rsq)
   names(output) <- c("mae", "rmse", "rsq")
@@ -210,6 +210,9 @@ calc_performance_raster <- function(truth, predicted) {
 perf_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
 perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
 
+writeRaster(perf_full_temporal, "data/processed/raster/temporal_performance_new.tif")
+writeRaster(perf_legacy_temporal, "data/processed/raster/temporal_performance_old.tif")
+
 # Plot performance metrics
 
 performance_df <- as.data.frame(perf_full_temporal, cells = TRUE) %>%
@@ -218,13 +221,28 @@ performance_df <- as.data.frame(perf_full_temporal, cells = TRUE) %>%
   pivot_longer(-cell) %>%
   separate_wider_delim(name, "_", names = c("measure", "version"))
 
-ggplot(performance_df, aes(x = value, fill = version)) +
+measure_labels <- as_labeller(c(mae = "MAE", rmse = "RMSE", rsq = "R-squared"))
+temporal_performance_hist <- ggplot(performance_df, aes(x = value, fill = version)) +
   geom_density(alpha = 0.5) +
-  facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free") +
+  facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free", labeller = measure_labels) +
   theme_classic() +
   ggh4x::facetted_pos_scales(x = list(
-    measure == "mae" ~ scale_x_continuous(limits = c(0, 5000)),
-    measure == "rmse" ~ scale_x_continuous(limits = c(0, 5000)),
+    measure == "mae" ~ scale_x_continuous(limits = c(0, 1500)),
+    measure == "rmse" ~ scale_x_continuous(limits = c(0, 1500)),
     measure == "rsq" ~ scale_x_continuous(limits = c(-1, 1))
-  ))
-  
+  )) +
+  geom_vline(xintercept = 0, colour = "grey10") +
+  labs(x = "Value", y = "Density", fill = "Version")
+
+# Calculate overall performance in explaining spatial patterns in mean GPP
+
+gpp_actual_mean <- mean(gpp_actual)
+gpp_pred_mean <- mean(gpp_pred)
+
+gpp_actual_legacy_mean <- mean(gpp_actual_legacy)
+gpp_pred_legacy_mean <- mean(gpp_pred_legacy)
+
+spatial_performance_new <- calc_performance(values(gpp_actual_mean), values(gpp_pred_mean), na.rm = TRUE)
+spatial_performance_old <- calc_performance(values(gpp_actual_legacy_mean), values(gpp_pred_legacy_mean), na.rm = TRUE)
+
+
