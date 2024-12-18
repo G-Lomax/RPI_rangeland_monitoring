@@ -38,7 +38,7 @@ dist_to_river <- distance(rivers_rast_reproject)
 
 dist_to_river_sa <- dist_to_river %>%
   project(covariates$DEM) %>%
-  mask(covariates$DEM)
+  crop(covariates$DEM, mask = TRUE)
 
 names(dist_to_river_sa) <- "dist_to_river"
 
