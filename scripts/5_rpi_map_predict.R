@@ -17,14 +17,14 @@ THREADS <- 16
 # Load raster data
 static_covariates <- rast("data/raw/raster/covariate_maps/staticVars.tif")
 dynamic_covariates <- rast("data/processed/raster/dynamic_covariates.tif")
-dist_to_river <- rast(paste0("data/processed/raster/dist_to_river/dist_to_river_", MIN_STREAM_ORDER, ".tif"))
+dist_to_river <- rast(paste0("data/processed/raster/dist_to_river_", MIN_STREAM_ORDER, ".tif"))
 twi <- rast("data/processed/raster/merit/merit_twi_fd8.tif")
 
 names(dist_to_river) <- "dist_to_river"
 
 # Load models
 
-qrf_model_spt <- read_rds("data/processed/rds/rf_tuned_spt.rds")
+# qrf_model_spt <- read_rds("data/processed/rds/rf_tuned_spt.rds")
 qrf_model_sp <- read_rds("data/processed/rds/rf_tuned_sp.rds")
 
 ## 2. Prepare additional precipitation covariates ----
@@ -44,7 +44,7 @@ names(pptMeanDayAnomaly) <- str_replace(names(pptAnnual), "precipitation", "pptM
 
 # Define final sets of static and dynamic covariates
 dynamic_covariates_all <- dynamic_covariates %>%
-  subset(!str_detect(names(dynamic_covariates), c("precipitation|pptMeanDay"))) %>%
+  subset(!str_detect(names(dynamic_covariates), "pptMeanDay")) %>%
   c(pptAnomaly, pptMeanDayAnomaly)
 
 static_covariates_all <- c(static_covariates, pptMean, dist_to_river, twi)
@@ -61,6 +61,7 @@ annual_predictions_sp <- YEARS %>%
 
 toc()
 
-writeRaster(annual_predictions_sp, "data/processed/raster/rpi_rast_sp.tif")
+writeRaster(annual_predictions_sp, "data/processed/raster/rpi_rast_sp.tif",
+            overwrite = TRUE)
 
 pushoverr::pushover("RPI raster written to disk")
