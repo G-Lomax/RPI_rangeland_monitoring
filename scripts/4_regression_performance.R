@@ -46,7 +46,7 @@ rf_predictions_sp_qu <- predict(
 
 data_with_quantiles <- task_gpp$data() %>%
   bind_cols(rf_predictions_spt_qu$predictions, rf_predictions_sp_qu$predictions) %>%
-  rename(quantile_pred_spt = "quantile= 0.9...17", quantile_pred_sp = "quantile= 0.9...18") %>%
+  rename(quantile_pred_spt = "quantile= 0.9...18", quantile_pred_sp = "quantile= 0.9...19") %>%
   mutate(across(.cols = c("GPP", starts_with("quantile")), .fns = ~ .x / 1000))
 
 # Plot distribution of model residuals (using 0.9 quantile) 
@@ -104,8 +104,8 @@ ggsave(
 
 # Variable importance
 
-importance_spt <- rf_tuned_spt$learner$importance()
-importance_sp <- rf_tuned_sp$learner$importance()
+importance_spt <- rf_model_spt$learner$importance()
+importance_sp <- rf_model_sp$learner$importance()
 
 static_vars <- c(
   "pptMean",
@@ -142,3 +142,89 @@ ggsave(
   importance_plot,
   width = 20, height = 20, units = "cm", dpi = 300
 )
+
+## 6. Comparison with previous versions
+
+# Convert rasters to consistent data frames covering the same spatial extent
+rpi_rast <- rast("data/processed/raster/rpi_rast_sp.tif")
+rpi_rast_legacy <- rast("data/processed/raster/rpi_legacy.tif")
+
+rpi_rast_crop <- rpi_rast[[1:nlyr(rpi_rast_legacy)]] %>%
+  terra::resample(rpi_rast_legacy[[1]]) %>%
+  crop(rpi_rast_legacy[[1]], mask = TRUE)
+
+rpi_rast_legacy_crop <- rpi_rast_legacy %>%
+  crop(rpi_rast_crop[[1]], mask = TRUE)
+
+rpi_df <- rpi_rast_crop %>%
+  as.data.frame(cells = TRUE) %>%
+  tidy_annual_vars() %>%
+  drop_na()
+
+rpi_legacy_df <- rpi_rast_legacy_crop %>%
+  as.data.frame(cells = TRUE) %>%
+  tidy_annual_vars() %>%
+  drop_na()
+
+
+# Calculate performance metrics for current and legacy model
+calc_performance <- function(truth, predicted) {
+  
+  error <- predicted - truth
+  
+  mae <- mean(abs(error))
+  rmse <- sqrt(mean(error ^ 2))
+  rsq <- 1 - sum((error ^ 2)) / sum((truth - mean(truth)) ^ 2)
+  
+  c(mae = mae, rmse = rmse, rsq = rsq)
+  
+}
+
+perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
+perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
+
+# Calculate pixel-wise performance in explaining temporal extent
+
+gpp_actual <- subset(rpi_rast_crop, str_detect(names(rpi_rast_crop), "GPP"))
+gpp_pred <- subset(rpi_rast_crop, str_detect(names(rpi_rast_crop), regex("^gpp_predicted")))
+
+gpp_actual_legacy <- subset(rpi_rast_legacy_crop, str_detect(names(rpi_rast_legacy_crop), "GPP"))
+gpp_pred_legacy <- subset(rpi_rast_legacy_crop, str_detect(names(rpi_rast_legacy_crop), regex("^gpp_predicted")))
+
+calc_performance_raster <- function(truth, predicted) {
+  
+  annual_anomaly <- truth - mean(truth)
+  pred_anomaly <- predicted - mean(predicted)
+  error <- pred_anomaly - annual_anomaly
+  
+  mae <- mean(abs(error), na.rm = TRUE)
+  rmse <- sqrt(mean(error ^ 2))
+  rsq <- 1 - (sum(error ^ 2) / sum(annual_anomaly ^ 2))
+  
+  output <- c(mae, rmse, rsq)
+  names(output) <- c("mae", "rmse", "rsq")
+  output
+  
+}
+
+perf_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
+perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
+
+# Plot performance metrics
+
+performance_df <- as.data.frame(perf_full_temporal, cells = TRUE) %>%
+  rename_with(~ paste0(.x, "_new"), -cell) %>%
+  left_join(as.data.frame(perf_legacy_temporal, cells = TRUE) %>% rename_with(~paste0(.x, "_old"), -cell)) %>%
+  pivot_longer(-cell) %>%
+  separate_wider_delim(name, "_", names = c("measure", "version"))
+
+ggplot(performance_df, aes(x = value, fill = version)) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free") +
+  theme_classic() +
+  ggh4x::facetted_pos_scales(x = list(
+    measure == "mae" ~ scale_x_continuous(limits = c(0, 5000)),
+    measure == "rmse" ~ scale_x_continuous(limits = c(0, 5000)),
+    measure == "rsq" ~ scale_x_continuous(limits = c(-1, 1))
+  ))
+  
