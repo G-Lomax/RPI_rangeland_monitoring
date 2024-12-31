@@ -29,7 +29,7 @@ static_vars <- rast("data/raw/raster/covariateMaps/staticVars.tif")
 ## 3. Pre-process data and extract raster values ----
 
 # Convert transect strikes into site and date-level % cover and count values
-tpw_data_summary <- tpw_data %>%
+tpw_data_summary <- x<- tpw_data %>%
   mutate(across(all_of(inv_species_lookup$colname), ~ as.numeric(as.character(.x)))) %>%
   group_by(village_pl, parentglob, date) %>%
   filter(markbare >= 0 & markbasal >= 0) %>%
@@ -210,5 +210,56 @@ mean_wet_gam_rpi_brms <- brm(
   chains = 4, iter = 4000, warmup = 1000,
   cores = 4, seed = 111,
   backend = "rstan",
-  file = "wet_gam_rpi_brms"
+  control = list(adapt_delta = 0.95),
+  file = "data/processed/rds/wet_gam_rpi_brms"
+)
+
+min_wet_gam_gpp_brms <- brm(
+  bf(
+    min_wet_bare / 100 ~ rpi + t2(x, y, bs = "ts"),
+    phi ~ rpi,
+    zi ~ rpi
+  ),
+  data = tpw_wet_season_one_adjusted,
+  family = zero_inflated_beta(),
+  chains = 4, iter = 4000, warmup = 1000,
+  cores = 4, seed = 111,
+  backend = "rstan",
+  control = list(adapt_delta = 0.95),
+  file = "data/processed/rds/min_wet_gam_rpi_brms"
+)
+
+# Scale GPP values to enable MCMC model fit
+
+tpw_wet_season_scaled <- tpw_wet_season_one_adjusted %>%
+  mutate(GPP = GPP / 1000)
+
+mean_wet_gam_gpp_brms <- brm(
+  bf(
+    mean_wet_bare / 100 ~ GPP + t2(x, y, bs = "ts"),
+    phi ~ GPP,
+    zi ~ GPP
+  ),
+  data = tpw_wet_season_scaled,
+  family = zero_inflated_beta(),
+  chains = 4, iter = 4000, warmup = 1000,
+  cores = 4, seed = 111,
+  backend = "rstan",
+  control = list(adapt_delta = 0.95),
+  file = "data/processed/rds/wet_gam_gpp_brms"
+)
+
+min_wet_gam_gpp_brms <- brm(
+  bf(
+    min_wet_bare / 100 ~ GPP + t2(x, y, bs = "ts"),
+    phi ~ GPP,
+    zi ~ GPP
+  ),
+  data = tpw_wet_season_scaled,
+  family = zero_inflated_beta(),
+  chains = 4, iter = 4000, warmup = 1000,
+  cores = 4, seed = 111,
+  backend = "rstan",
+  control = list(adapt_delta = 0.95),
+  file = "data/processed/rds/min_wet_gam_gpp_brms"
 )
