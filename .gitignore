@@ -30,7 +30,7 @@
 /data/
 
 # Results and figures
-/results/figures/
+/results/*
 
 # Script output files
 *.out
