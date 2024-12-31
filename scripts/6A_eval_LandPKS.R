@@ -201,7 +201,7 @@ rpi_gpp_total <- landpks_grid %>%
   pivot_longer(cols = c("Potential GPP", "GPP", "RPI")) %>%
   ggplot(aes(x = total_n, y = value)) +
   geom_point(size = 0.6) +
-  geom_smooth(method = "lm") +
+  geom_smooth(method = "gam", alpha = 0.4, colour = "darkgreen", fill = "green3") +
   facet_grid(cols = vars(group), rows = vars(name), scales = "free_y") +
   theme_bw() +
   labs(x = "Fractional cover (%)",
