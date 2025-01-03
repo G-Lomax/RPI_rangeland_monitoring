@@ -135,17 +135,10 @@ write_rds(task_gpp, "data/processed/rds/regr_task_gpp.rds")
 
 # Create resampling strategy
 
+sp_cv_plan <- rsmp("spcv_coords", folds = 20)
 spt_cv_plan <- rsmp("sptcv_cstf", folds = 20)
-# sp_cv_plan <- rsmp("spcv_coords", folds = 20)
-# disc_cv_plan <- rsmp("spcv_disc", folds = 20, radius = 100000, buffer = 25000)
 
 ## 6. Feature selection on subset of variables with initial tuning values ----
-
-# Define pipeline to take a random subsample of data for feature selection
-
-# set.seed(SEED + 1)
-# subset_po <- po("subsample", frac = SUBSAMPLE_FRAC)
-
 
 # Create learner (ranger random forest) with initial tuning values
 
@@ -168,6 +161,14 @@ fs_method <- fs("sequential", min_features = 1)
 
 fs_term <- trm("stagnation_batch")
 
+sp_feature_select <- fsi(
+  task = task_gpp,
+  learner = lrn_ranger_untuned,
+  resampling = sp_cv_plan,
+  measure = perf_msr,
+  terminator = fs_term
+)
+
 spt_feature_select <- fsi(
   task = task_gpp,
   learner = lrn_ranger_untuned,
@@ -176,17 +177,25 @@ spt_feature_select <- fsi(
   terminator = fs_term
 )
 
-# sp_feature_select <- fsi(
-#   task = task_gpp,
-#   learner = lrn_ranger_untuned,
-#   resampling = sp_cv_plan,
-#   measure = perf_msr,
-#   terminator = fs_term
-# )
-
 # Identify optimal feature set for each resampling strategy and store
 # Time ~ 10-12 hours
 
+# Spatial
+set.seed(456)
+tic()
+progressr::with_progress(
+  sp_feature_set <- fs_method$optimize(sp_feature_select)
+)
+toc()
+
+write_rds(sp_feature_select, "data/processed/rds/feature_selector_sp.rds")
+write_rds(sp_feature_set, "data/processed/rds/features_sp.rds")
+rm(sp_feature_select, sp_feature_set)
+gc()
+
+pushoverr::pushover("Feature selection complete: Spatial block CV")
+
+# Spatiotemporal
 set.seed(123)
 
 tic()
@@ -202,35 +211,32 @@ rm(spt_feature_select, spt_feature_set)
 gc()
 pushoverr::pushover("Feature selection complete: Spatiotemporal CV")
 
-
-# set.seed(456)
-# tic()
-# progressr::with_progress(
-#   sp_feature_set <- fs_method$optimize(sp_feature_select)
-# )
-# toc()
-# 
-# write_rds(sp_feature_select, "data/processed/rds/feature_selector_sp.rds")
-# write_rds(sp_feature_set, "data/processed/rds/features_sp.rds")
-# rm(sp_feature_select, sp_feature_set)
-# gc()
-# 
-# pushoverr::pushover("Feature selection complete: Spatial block CV")
-
-
 ## 7. Hyperparameter tuning with final feature set ----
 
 # Load features to retain and assign to new tasks
+sp_feature_set <- read_rds("data/processed/rds/features_sp.rds")
 spt_feature_set <- read_rds("data/processed/rds/features_spt.rds")
-# sp_feature_set <- read_rds("data/processed/rds/features_sp.rds")
+
+task_gpp_sp <- task_gpp$clone()
+task_gpp_sp$select(unlist(sp_feature_set$features))
 
 task_gpp_spt <- task_gpp$clone()
 task_gpp_spt$select(unlist(spt_feature_set$features))
 
-# task_gpp_sp <- task_gpp$clone()
-# task_gpp_sp$select(unlist(sp_feature_set$features))
-
 # Define new quantile regression learners for (auto)tuning
+
+lrn_ranger_tuned_sp <- lrn(
+  "regr.ranger",
+  predict_type = "response",
+  quantreg = TRUE,
+  keep.inbag = TRUE,
+  importance = "permutation",
+  num.trees = 1001,
+  mtry.ratio = to_tune(p_dbl(0, 1)),
+  min.node.size = to_tune(p_int(100, 1000)),
+  sample.fraction = to_tune(p_dbl(0.1, 0.9)),
+  respect.unordered.factors = "order"
+)
 
 lrn_ranger_tuned_spt <- lrn(
   "regr.ranger",
@@ -245,24 +251,20 @@ lrn_ranger_tuned_spt <- lrn(
   respect.unordered.factors = "order"
 )
 
-# lrn_ranger_tuned_sp <- lrn(
-#   "regr.ranger", 
-#   predict_type = "response",
-#   quantreg = TRUE,
-#   keep.inbag = TRUE,
-#   importance = "permutation",
-#   num.trees = 1001,
-#   mtry.ratio = to_tune(p_dbl(0, 1)),
-#   min.node.size = to_tune(p_int(100, 1000)),
-#   sample.fraction = to_tune(p_dbl(0.1, 0.9)),
-#   respect.unordered.factors = "order"
-# )
 
 # Define auto-tuner objects for each model
 
 random_tuner <- tnr("random_search")
 
 perf_msr <- msr("regr.rmse")
+
+at_sp <- auto_tuner(
+  tuner = random_tuner,
+  learner = lrn_ranger_tuned_sp,
+  resampling = sp_cv_plan,
+  measure = perf_msr,
+  term_evals = 25
+)
 
 at_spt <- auto_tuner(
   tuner = random_tuner,
@@ -272,15 +274,22 @@ at_spt <- auto_tuner(
   term_evals = 25
 )
 
-# at_sp <- auto_tuner(
-#   tuner = random_tuner,
-#   learner = lrn_ranger_tuned_sp,
-#   resampling = sp_cv_plan,
-#   measure = perf_msr,
-#   term_evals = 25
-# )
-
 # Tune and train models
+
+# Spatial model
+
+set.seed(987)
+
+tic()
+rf_tuned_sp <-at_sp$train(task_gpp_sp)
+toc()
+
+write_rds(rf_tuned_sp, "data/processed/rds/rf_tuned_sp.rds")
+
+rm(rf_tuned_sp)
+gc()
+
+pushoverr::pushover("Tuning complete: Spatial block CV")
 
 # Spatiotemporal model
 
@@ -297,18 +306,5 @@ gc()
 
 pushoverr::pushover("Tuning complete: Spatiotemporal CV model")
 
-# # Spatial model
-# 
-# set.seed(987)
-# 
-# tic()
-# rf_tuned_sp <-at_sp$train(task_gpp_sp)
-# toc()
-# 
-# write_rds(rf_tuned_sp, "data/processed/rds/rf_tuned_sp.rds")
-# 
-# rm(rf_tuned_sp)
-# gc()
-# 
-# pushoverr::pushover("Tuning complete: Spatial block CV")
+
 
