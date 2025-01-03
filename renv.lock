@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.3.3",
+    "Version": "4.4.1",
     "Repositories": [
       {
         "Name": "mlrorg",
@@ -43,18 +43,18 @@
     },
     "KernSmooth": {
       "Package": "KernSmooth",
-      "Version": "2.23-24",
+      "Version": "2.23-26",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "stats"
       ],
-      "Hash": "9f33a1ee37bbe8919eb2ec4b9f2473a5"
+      "Hash": "2fb39782c07b5ad422b0448ae83f64c4"
     },
     "MASS": {
       "Package": "MASS",
-      "Version": "7.3-60.0.1",
+      "Version": "7.3-63",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -65,11 +65,11 @@
         "stats",
         "utils"
       ],
-      "Hash": "b765b28387acc8ec9e9c1530713cb19c"
+      "Hash": "192afb459696dc96ccb5adb5bef047de"
     },
     "Matrix": {
       "Package": "Matrix",
-      "Version": "1.6-5",
+      "Version": "1.7-1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -82,7 +82,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "8c7115cd3a0e048bda2a7cd110549f7a"
+      "Hash": "5122bb14d8736372411f955e1b16bc8a"
     },
     "MatrixModels": {
       "Package": "MatrixModels",
@@ -190,7 +190,7 @@
     },
     "XML": {
       "Package": "XML",
-      "Version": "3.99-0.17",
+      "Version": "3.99-0.18",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -198,7 +198,7 @@
         "methods",
         "utils"
       ],
-      "Hash": "bc2a8a1139d8d4bd9c46086708945124"
+      "Hash": "4a5eca1070ecfe97e68727ed4b9a89fa"
     },
     "abind": {
       "Package": "abind",
@@ -246,7 +246,10 @@
       "Package": "bbotk",
       "Version": "1.5.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/bbotk",
+      "RemoteRef": "v1.5.0",
+      "RemoteSha": "5e57c6d02a6d98069f39df30e6e024debda4e061",
       "Requirements": [
         "R",
         "R6",
@@ -362,7 +365,7 @@
     },
     "class": {
       "Package": "class",
-      "Version": "7.3-22",
+      "Version": "7.3-23",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -371,7 +374,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "f91f6b29f38b8c280f2b9477787d4bb2"
+      "Hash": "d0cb9cc838c3b43560bd958fc4317fdc"
     },
     "classInt": {
       "Package": "classInt",
@@ -482,7 +485,7 @@
         "stats",
         "stringdist"
       ],
-      "Hash": "df0dc882dc658c00f9365c04c42f5856"
+      "Hash": "9f0508d37eaa0bbae0dd246b5d03c588"
     },
     "confintr": {
       "Package": "confintr",
@@ -1487,7 +1490,10 @@
       "Package": "mlr3",
       "Version": "0.22.1",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3",
+      "RemoteRef": "v0.22.1",
+      "RemoteSha": "ddf27849705c9579183098a8c955ed27ef4328e5",
       "Requirements": [
         "R",
         "R6",
@@ -1512,7 +1518,10 @@
       "Package": "mlr3cluster",
       "Version": "0.1.10",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3cluster",
+      "RemoteRef": "v0.1.10",
+      "RemoteSha": "55d9bbd9fd15caf50a96ca37dd4690b59e735b6e",
       "Requirements": [
         "R",
         "R6",
@@ -1533,7 +1542,10 @@
       "Package": "mlr3data",
       "Version": "0.9.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3data",
+      "RemoteRef": "v0.9.0",
+      "RemoteSha": "6a444a22bffc8d0dbadd4b0413eed8cadba8eabe",
       "Requirements": [
         "R"
       ],
@@ -1560,7 +1572,10 @@
       "Package": "mlr3fselect",
       "Version": "1.2.1",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3fselect",
+      "RemoteRef": "v1.2.1",
+      "RemoteSha": "5ba0d08cd058aef6a3be36d0fdb07251a1e43f7b",
       "Requirements": [
         "R",
         "R6",
@@ -1579,7 +1594,10 @@
       "Package": "mlr3hyperband",
       "Version": "0.6.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3hyperband",
+      "RemoteRef": "v0.6.0",
+      "RemoteSha": "c464f4441de0dc0f7e01118776f79b4c1599eaea",
       "Requirements": [
         "R",
         "R6",
@@ -1598,7 +1616,10 @@
       "Package": "mlr3learners",
       "Version": "0.9.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3learners",
+      "RemoteRef": "v0.9.0",
+      "RemoteSha": "e2597e9a5f97ec86f3d9451df6b71ba124fe59a7",
       "Requirements": [
         "R",
         "R6",
@@ -1614,7 +1635,10 @@
       "Package": "mlr3mbo",
       "Version": "0.2.8",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3mbo",
+      "RemoteRef": "v0.2.8",
+      "RemoteSha": "20f49d3896fb2af0052eb4a67a9097c545976b7c",
       "Requirements": [
         "R",
         "R6",
@@ -1647,7 +1671,10 @@
       "Package": "mlr3misc",
       "Version": "0.16.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3misc",
+      "RemoteRef": "v0.16.0",
+      "RemoteSha": "850da9b4619bbc02e6b83077d4128688e34a15e6",
       "Requirements": [
         "R",
         "R6",
@@ -1663,7 +1690,10 @@
       "Package": "mlr3pipelines",
       "Version": "0.7.1",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3pipelines",
+      "RemoteRef": "v0.7.1",
+      "RemoteSha": "1566ae6427b90e717040b504f0150a4de8ea8754",
       "Requirements": [
         "R",
         "R6",
@@ -1683,7 +1713,10 @@
       "Package": "mlr3spatiotempcv",
       "Version": "2.3.2",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3spatiotempcv",
+      "RemoteRef": "v2.3.2",
+      "RemoteSha": "076007c9ac5a96e0822a5f36a4d2035ca72d316d",
       "Requirements": [
         "R",
         "R6",
@@ -1701,7 +1734,10 @@
       "Package": "mlr3tuning",
       "Version": "1.3.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3tuning",
+      "RemoteRef": "v1.3.0",
+      "RemoteSha": "466c2eb2a9d2433cc992c034b0bfd6f161fce6e2",
       "Requirements": [
         "R",
         "R6",
@@ -1736,7 +1772,10 @@
       "Package": "mlr3verse",
       "Version": "0.3.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3verse",
+      "RemoteRef": "v0.3.0",
+      "RemoteSha": "2016c7a6b214dd1c73af870dd6b7bb7ee9312aa2",
       "Requirements": [
         "R",
         "bbotk",
@@ -1762,7 +1801,10 @@
       "Package": "mlr3viz",
       "Version": "0.10.0",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/mlr3viz",
+      "RemoteRef": "v0.10.0",
+      "RemoteSha": "39a6677c05ac328cf8e8455d9ee9c77d727d4d85",
       "Requirements": [
         "R",
         "checkmate",
@@ -1863,7 +1905,7 @@
     },
     "nnet": {
       "Package": "nnet",
-      "Version": "7.3-19",
+      "Version": "7.3-20",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1871,7 +1913,7 @@
         "stats",
         "utils"
       ],
-      "Hash": "2c797b46eea7fb58ede195bc0b1f1138"
+      "Hash": "c955edf99ff24a32e96bd0a22645af60"
     },
     "openssl": {
       "Package": "openssl",
@@ -1897,7 +1939,10 @@
       "Package": "paradox",
       "Version": "1.0.1",
       "Source": "Repository",
-      "Repository": "mlrorg",
+      "Repository": "https://mlr-org.r-universe.dev",
+      "RemoteUrl": "https://github.com/mlr-org/paradox",
+      "RemoteRef": "v1.0.1",
+      "RemoteSha": "cdcc8e616afe243cd7c54e15713c86f818a52626",
       "Requirements": [
         "R6",
         "backports",
@@ -2585,7 +2630,7 @@
       "RemoteType": "github",
       "RemoteUsername": "r-tmap",
       "RemoteRepo": "tmap",
-      "RemoteSha": "ac179b6febcf53336500cbd540284607eae27066",
+      "RemoteSha": "70b0bc8e6bfcac42dadf9267f2577cccdfcf1367",
       "RemoteHost": "api.github.com",
       "Requirements": [
         "R",
@@ -2610,7 +2655,7 @@
         "tmaptools",
         "units"
       ],
-      "Hash": "e6a46c9064004617535c14035bcb55eb"
+      "Hash": "291cf7fede8da815939581150add5751"
     },
     "tmaptools": {
       "Package": "tmaptools",
