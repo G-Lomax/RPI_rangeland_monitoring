@@ -13,8 +13,8 @@ source("scripts/load.R")
 
 task_gpp <- read_rds("data/processed/rds/regr_task_gpp.rds")
 
-rf_model_spt <- read_rds("data/processed/rds/rf_tuned_spt.rds")
 rf_model_sp <- read_rds("data/processed/rds/rf_tuned_sp.rds")
+rf_model_spt <- read_rds("data/processed/rds/rf_tuned_spt.rds")
 
 # Country polygons for maps
 
@@ -25,11 +25,11 @@ ke_tz <- st_read("data/raw/vector/kenya_tanzania.geojson")
 # Measures to evaluate model performance
 measures <- msrs(c("regr.mae", "regr.rmse", "regr.rsq"))
 
-rf_predictions_spt <- rf_model_spt$predict(task_gpp)
-rf_predictions_sp <- rf_model_sp$predict(task_gpp)
-
-rf_predictions_spt$score(measures)
-rf_predictions_sp$score(measures)
+# rf_predictions_sp <- rf_model_sp$predict(task_gpp)
+# rf_predictions_spt <- rf_model_spt$predict(task_gpp)
+# 
+# rf_predictions_sp$score(measures)
+# rf_predictions_spt$score(measures)
 
 ## 4. Visualise model fit ----
 
@@ -159,17 +159,17 @@ rpi_rast_legacy_crop <- rpi_rast_legacy %>%
 rpi_rast_crop <- rpi_rast[[1:nlyr(rpi_rast_legacy_crop)]] %>%
   mask(rpi_rast_legacy_crop)
 
-rpi_df <- rpi_rast_crop %>%
-  as.data.frame(cells = TRUE) %>%
-  tidy_annual_vars() %>%
-  drop_na()
-
-rpi_legacy_df <- rpi_rast_legacy_crop %>%
-  as.data.frame(cells = TRUE) %>%
-  tidy_annual_vars() %>%
-  drop_na()
-
-
+# rpi_df <- rpi_rast_crop %>%
+#   as.data.frame(cells = TRUE) %>%
+#   tidy_annual_vars() %>%
+#   drop_na()
+# 
+# rpi_legacy_df <- rpi_rast_legacy_crop %>%
+#   as.data.frame(cells = TRUE) %>%
+#   tidy_annual_vars() %>%
+#   drop_na()
+# 
+# 
 # Calculate performance metrics for current and legacy model
 calc_performance <- function(truth, predicted, na.rm = FALSE) {
 
@@ -182,9 +182,9 @@ calc_performance <- function(truth, predicted, na.rm = FALSE) {
   c(mae = mae, rmse = rmse, rsq = rsq)
 
 }
-
-perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
-perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
+# 
+# perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
+# perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
 
 # Calculate pixel-wise performance in explaining temporal extent
 
@@ -198,14 +198,14 @@ gpp_actual_legacy <- subset(rpi_rast_legacy_crop, str_detect(names(rpi_rast_lega
 gpp_pred_legacy <- subset(rpi_rast_legacy_crop, str_detect(names(rpi_rast_legacy_crop), regex("^gpp_predicted")))
 
 # (Load RESTREND residuals to compare)
-# restrend_old <- rast("data/processed/raster/restrend_resids_old.tif") %>%
-#   crop(rpi_rast[[1]], mask = TRUE, extend = TRUE)
-# restrend_old_resids <- subset(restrend_old, str_detect(names(restrend_old), "resid"))
-# restrend_old_preds <- gpp_actual_legacy - restrend_old_resids
+restrend_old <- rast("data/processed/raster/restrend_resids_old.tif") %>%
+  crop(rpi_rast[[1]], mask = TRUE, extend = TRUE)
+restrend_old_resids <- subset(restrend_old, str_detect(names(restrend_old), "resid"))
+restrend_old_preds <- gpp_actual_legacy - restrend_old_resids
 
-restrend_new <- rast("data/processed/raster/restrend.tif")
-restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
-restrend_new_preds <- gpp_actual - restrend_new_resids
+# restrend_new <- rast("data/processed/raster/restrend.tif")
+# restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
+# restrend_new_preds <- gpp_actual - restrend_new_resids
 
 calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
@@ -223,27 +223,27 @@ calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
 }
 
-perf_new_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
-perf_new_subset_temporal <- calc_performance_raster(gpp_actual_subset, gpp_pred_subset)
-perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
-# perf_restrend_old_temporal <- calc_performance_raster(gpp_actual_legacy, restrend_old_preds)
-perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
+# perf_new_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
+# perf_new_subset_temporal <- calc_performance_raster(gpp_actual_subset, gpp_pred_subset)
+# perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
+perf_restrend_old_temporal <- calc_performance_raster(gpp_actual_legacy, restrend_old_preds)
+# perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
 
-writeRaster(perf_new_full_temporal,
-            "data/processed/raster/temporal_performance_full_new.tif",
-            overwrite = TRUE)
-writeRaster(perf_new_subset_temporal,
-            "data/processed/raster/temporal_performance_new.tif",
-            overwrite = TRUE)
-writeRaster(perf_legacy_temporal,
-            "data/processed/raster/temporal_performance_old.tif",
-            overwrite = TRUE)
+# writeRaster(perf_new_full_temporal,
+#             "data/processed/raster/temporal_performance_full_new.tif",
+#             overwrite = TRUE)
+# writeRaster(perf_new_subset_temporal,
+#             "data/processed/raster/temporal_performance_new.tif",
+#             overwrite = TRUE)
+# writeRaster(perf_legacy_temporal,
+#             "data/processed/raster/temporal_performance_old.tif",
+#             overwrite = TRUE)
 # writeRaster(perf_restrend_old_temporal,
 #             "data/processed/raster/temporal_performance_restrend_old.tif",
 #             overwrite = TRUE)
-writeRaster(perf_restrend_new_temporal,
-            "data/processed/raster/temporal_performance_restrend_new.tif",
-            overwrite = TRUE)
+# writeRaster(perf_restrend_new_temporal,
+#             "data/processed/raster/temporal_performance_restrend_new.tif",
+#             overwrite = TRUE)
 
 
 
@@ -272,6 +272,7 @@ performance_df_restrend <- as.data.frame(perf_new_full_temporal, cells = TRUE) %
 measure_labels <- as_labeller(c(mae = "MAE", rmse = "RMSE", rsq = "R-squared"))
 
 temporal_performance_hist <- performance_df_old %>%
+  filter(measure != "rmse") %>%
   mutate(version = ordered(version, levels = c("old", "new_subset"))) %>%
   arrange(version) %>%
   ggplot(aes(x = value, fill = version)) +
@@ -288,6 +289,7 @@ temporal_performance_hist <- performance_df_old %>%
   labs(x = "Value", y = "Density", fill = "Version")
 
 temporal_performance_hist_restrend <- performance_df_restrend %>%
+  filter(measure != "rmse") %>%
   mutate(version = ordered(version, levels = c("restrend", "new_full"))) %>%
   arrange(version) %>%
   ggplot(aes(x = value, fill = version)) +
@@ -420,10 +422,13 @@ restrend_new_rsq_map <- generate_performance_map(perf_restrend_new_temporal, "rs
 gpp_actual_mean <- mean(gpp_actual)
 gpp_pred_mean <- mean(gpp_pred)
 
+gpp_actual_subset_mean <- mean(gpp_actual_subset)
+gpp_pred_subset_mean <- mean(gpp_pred_subset)
+
 gpp_actual_legacy_mean <- mean(gpp_actual_legacy)
 gpp_pred_legacy_mean <- mean(gpp_pred_legacy)
 
-spatial_performance_new <- calc_performance(values(gpp_actual_mean), values(gpp_pred_mean), na.rm = TRUE)
+spatial_performance_new <- calc_performance(values(gpp_actual_subset_mean), values(gpp_pred_subset_mean), na.rm = TRUE)
 spatial_performance_old <- calc_performance(values(gpp_actual_legacy_mean), values(gpp_pred_legacy_mean), na.rm = TRUE)
 
 
