@@ -14,7 +14,6 @@ source("scripts/load.R")
 task_gpp <- read_rds("data/processed/rds/regr_task_gpp.rds")
 
 rf_model_sp <- read_rds("data/processed/rds/rf_tuned_sp.rds")
-rf_model_spt <- read_rds("data/processed/rds/rf_tuned_spt.rds")
 
 # Country polygons for maps
 
@@ -25,21 +24,14 @@ ke_tz <- st_read("data/raw/vector/kenya_tanzania.geojson")
 # Measures to evaluate model performance
 measures <- msrs(c("regr.mae", "regr.rmse", "regr.rsq"))
 
-# rf_predictions_sp <- rf_model_sp$predict(task_gpp)
-# rf_predictions_spt <- rf_model_spt$predict(task_gpp)
-# 
-# rf_predictions_sp$score(measures)
-# rf_predictions_spt$score(measures)
+rf_predictions_sp <- rf_model_sp$predict(task_gpp)
+
+rf_predictions_sp$score(measures)
 
 ## 4. Visualise model fit ----
 
 # Extract quantile predictions
-rf_predictions_spt_qu <- predict(
-  rf_model_spt$learner$model,
-  task_gpp$data(),
-  type = "quantiles",
-  quantiles = 0.9
-)
+
 
 rf_predictions_sp_qu <- predict(
   rf_model_sp$learner$model,
@@ -49,14 +41,14 @@ rf_predictions_sp_qu <- predict(
 )
 
 data_with_quantiles <- task_gpp$data() %>%
-  bind_cols(rf_predictions_spt_qu$predictions, rf_predictions_sp_qu$predictions) %>%
-  rename(quantile_pred_spt = "quantile= 0.9...18", quantile_pred_sp = "quantile= 0.9...19") %>%
+  bind_cols(rf_predictions_sp_qu$predictions) %>%
+  rename(quantile_pred = "quantile= 0.9") %>%
   mutate(across(.cols = c("GPP", starts_with("quantile")), .fns = ~ .x / 1000))
 
 # Plot distribution of model residuals (using 0.9 quantile) 
 density_breaks <- c(1, 10, 100, 1000, 10000)
 
-density_plot_spt <- ggplot(data_with_quantiles, aes(x = quantile_pred_spt, y = GPP)) +
+density_plot_sp <- ggplot(data_with_quantiles, aes(x = quantile_pred, y = GPP)) +
   geom_hex(bins = 60) +
   scale_fill_viridis_c(direction = 1, trans = "log", breaks = density_breaks) +
   geom_abline(slope = seq(0.2, 1, 0.2), intercept = 0, colour = "grey", lwd = 0.8, linetype = "longdash") +
@@ -73,30 +65,6 @@ density_plot_spt <- ggplot(data_with_quantiles, aes(x = quantile_pred_spt, y = G
   labs(x = expression(atop("Potential GPP", (kg~C~m^-2~yr^-1))),
        y = expression(atop("Actual GPP", (kg~C~m^-2~yr^-1))),
        fill = "Number of points")
-
-density_plot_sp <- ggplot(data_with_quantiles, aes(x = quantile_pred_sp, y = GPP)) +
-  geom_hex(bins = 60) +
-  scale_fill_viridis_c(direction = 1, trans = "log", breaks = density_breaks) +
-  geom_abline(slope = seq(0.2, 1, 0.2), intercept = 0, colour = "grey", lwd = 0.8, linetype = "longdash") +
-  geom_abline(slope = 1, intercept = 0, colour = "grey", lwd = 1.6) +
-  theme_classic() +
-  theme(legend.position = c(0.18, 0.75), legend.key.height = unit(1.5, "cm"),
-        axis.title = element_text(size = 24),
-        axis.text = element_text(size = 16),
-        legend.title = element_text(size = 20),
-        legend.text = element_text(size = 16),
-        legend.background = element_rect(fill = "transparent")) +
-  xlim(0, 16) +
-  ylim(0, 16) +
-  labs(x = expression(atop("Potential GPP", (kg~C~m^-2~yr^-1))),
-       y = expression(atop("Actual GPP", (kg~C~m^-2~yr^-1))),
-       fill = "Number of points")
-
-ggsave(
-  "results/figures/density_plot_spt.png",
-  density_plot_spt,
-  width = 24, height = 24, units = "cm", dpi = 300
-)
 
 ggsave(
   "results/figures/density_plot_sp.png",
@@ -108,7 +76,7 @@ ggsave(
 
 # Variable importance
 
-importance_spt <- rf_model_spt$learner$importance()
+# importance_spt <- rf_model_spt$learner$importance()
 importance_sp <- rf_model_sp$learner$importance()
 
 static_vars <- c(
@@ -121,30 +89,52 @@ static_vars <- c(
   "dist_to_river",
   "sand"
 )
+var_labels <- c(
+  precipitation = "<i>Annual precipitation</i>",
+  mean_ppt = "Mean annual precipitation",
+  temperature_2m = "Mean annual temperature",
+  pptIntensity = "Precipitation intensity",
+  pptMeanDayAnomaly = "Anomaly in<br>mean precipitation day",
+  GMT_0900_PAR = "Mean PAR",
+  pptAnomaly = "Annual precipitation anomaly",
+  potential_evaporation_sum = "Potential evapotranspiration",
+  ugi = "Unranked Gini index",
+  sand = "Soil sand fraction",
+  treeCover = "Tree cover fraction",
+  ECO_ID = "<i>Ecoregion</i>",
+  DEM = "<i>Elevation</i>",
+  slope = "Slope",
+  distToRiver = "Distance to river",
+  landform = "Landform",
+  twi = "Topographic Wetness Index"
+)
 
-importance_df <- tibble(variable = unique(c(names(importance_spt), names(importance_sp)))) %>%
-  mutate(importance_spt = importance_spt[variable],
-         importance_sp = importance_sp[variable],
-         type = ifelse(variable %in% static_vars, "Static", "Annual"))
+var_labels_df <- data.frame(variable = names(var_labels), label = unname(var_labels))
+
+importance_df <- tibble(variable = names(importance_sp)) %>%
+  mutate(importance_sp = importance_sp[variable],
+         type = ifelse(variable %in% static_vars, "Static", "Annual")) %>%
+  left_join(var_labels_df)
 
 importance_plot <- importance_df %>%
-  replace_na(list("importance_sp" = 0, "importance_spt" = 0)) %>%
-  mutate(variable = reorder(variable, importance_sp)) %>%
+  mutate(label = reorder(label, importance_sp)) %>%
   pivot_longer(starts_with("importance")) %>%
-  ggplot(aes(x = value, y = variable, colour = name, shape = type)) +
+  ggplot(aes(x = value, y = label, colour = type)) +
   geom_point(size = 2) +
+  scale_colour_manual(values = c("darkblue", "red")) +
   theme_bw() +
-  scale_colour_manual(labels = c("Spatial block CV", "Spatiotemporal LLTO-CV"), values = c("darkblue", "red")) +
-  labs(x = "Variable importance", y = "Variable", colour = "CV method", shape = "Variable type") +
+  labs(x = "Variable importance", y = "Variable", colour = "Variable type") +
   theme(axis.title = element_text(size = 20),
         axis.text = element_text(size = 16),
         legend.title = element_text(size = 20),
-        legend.text = element_text(size = 16))
+        legend.text = element_text(size = 16),
+        legend.position = "bottom",
+        axis.text.y = ggtext::element_markdown())
 
 ggsave(
   "results/figures/var_importance.png",
   importance_plot,
-  width = 20, height = 20, units = "cm", dpi = 300
+  width = 24, height = 20, units = "cm", dpi = 250
 )
 
 ## 6. Comparison with previous versions
@@ -159,17 +149,17 @@ rpi_rast_legacy_crop <- rpi_rast_legacy %>%
 rpi_rast_crop <- rpi_rast[[1:nlyr(rpi_rast_legacy_crop)]] %>%
   mask(rpi_rast_legacy_crop)
 
-# rpi_df <- rpi_rast_crop %>%
-#   as.data.frame(cells = TRUE) %>%
-#   tidy_annual_vars() %>%
-#   drop_na()
-# 
-# rpi_legacy_df <- rpi_rast_legacy_crop %>%
-#   as.data.frame(cells = TRUE) %>%
-#   tidy_annual_vars() %>%
-#   drop_na()
-# 
-# 
+rpi_df <- rpi_rast_crop %>%
+  as.data.frame(cells = TRUE) %>%
+  tidy_annual_vars() %>%
+  drop_na()
+
+rpi_legacy_df <- rpi_rast_legacy_crop %>%
+  as.data.frame(cells = TRUE) %>%
+  tidy_annual_vars() %>%
+  drop_na()
+
+
 # Calculate performance metrics for current and legacy model
 calc_performance <- function(truth, predicted, na.rm = FALSE) {
 
@@ -182,9 +172,9 @@ calc_performance <- function(truth, predicted, na.rm = FALSE) {
   c(mae = mae, rmse = rmse, rsq = rsq)
 
 }
-# 
-# perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
-# perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
+
+perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
+perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
 
 # Calculate pixel-wise performance in explaining temporal extent
 
@@ -203,9 +193,9 @@ restrend_old <- rast("data/processed/raster/restrend_resids_old.tif") %>%
 restrend_old_resids <- subset(restrend_old, str_detect(names(restrend_old), "resid"))
 restrend_old_preds <- gpp_actual_legacy - restrend_old_resids
 
-# restrend_new <- rast("data/processed/raster/restrend.tif")
-# restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
-# restrend_new_preds <- gpp_actual - restrend_new_resids
+restrend_new <- rast("data/processed/raster/restrend.tif")
+restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
+restrend_new_preds <- gpp_actual - restrend_new_resids
 
 calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
@@ -223,27 +213,27 @@ calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
 }
 
-# perf_new_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
-# perf_new_subset_temporal <- calc_performance_raster(gpp_actual_subset, gpp_pred_subset)
-# perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
+perf_new_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
+perf_new_subset_temporal <- calc_performance_raster(gpp_actual_subset, gpp_pred_subset)
+perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
 perf_restrend_old_temporal <- calc_performance_raster(gpp_actual_legacy, restrend_old_preds)
-# perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
+perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
 
-# writeRaster(perf_new_full_temporal,
-#             "data/processed/raster/temporal_performance_full_new.tif",
-#             overwrite = TRUE)
-# writeRaster(perf_new_subset_temporal,
-#             "data/processed/raster/temporal_performance_new.tif",
-#             overwrite = TRUE)
-# writeRaster(perf_legacy_temporal,
-#             "data/processed/raster/temporal_performance_old.tif",
-#             overwrite = TRUE)
-# writeRaster(perf_restrend_old_temporal,
-#             "data/processed/raster/temporal_performance_restrend_old.tif",
-#             overwrite = TRUE)
-# writeRaster(perf_restrend_new_temporal,
-#             "data/processed/raster/temporal_performance_restrend_new.tif",
-#             overwrite = TRUE)
+writeRaster(perf_new_full_temporal,
+            "data/processed/raster/temporal_performance_full_new.tif",
+            overwrite = TRUE)
+writeRaster(perf_new_subset_temporal,
+            "data/processed/raster/temporal_performance_new.tif",
+            overwrite = TRUE)
+writeRaster(perf_legacy_temporal,
+            "data/processed/raster/temporal_performance_old.tif",
+            overwrite = TRUE)
+writeRaster(perf_restrend_old_temporal,
+            "data/processed/raster/temporal_performance_restrend_old.tif",
+            overwrite = TRUE)
+writeRaster(perf_restrend_new_temporal,
+            "data/processed/raster/temporal_performance_restrend_new.tif",
+            overwrite = TRUE)
 
 
 
@@ -415,7 +405,6 @@ generate_performance_map <- function(performance_rast, metric, palette) {
 
 rpi_new_rsq_map <- generate_performance_map(perf_new_full_temporal, "rsq", "viridis")
 restrend_new_rsq_map <- generate_performance_map(perf_restrend_new_temporal, "rsq", "viridis")
-
 
 # Calculate overall performance in explaining spatial patterns in mean GPP
 
