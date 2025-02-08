@@ -87,7 +87,6 @@ static_vars <- c(
   "dist_to_river",
   "sand"
 )
-
 var_labels <- c(
   precipitation = "<i>Annual precipitation</i>",
   mean_ppt = "Mean annual precipitation",
@@ -133,7 +132,7 @@ importance_plot <- importance_df %>%
 ggsave(
   "results/figures/var_importance.png",
   importance_plot,
-  width = 20, height = 20, units = "cm", dpi = 300
+  width = 24, height = 20, units = "cm", dpi = 250
 )
 
 ## 6. Comparison with previous versions
@@ -172,9 +171,8 @@ calc_performance <- function(truth, predicted, na.rm = FALSE) {
 
 }
 
-# 
-# perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
-# perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
+perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
+perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
 
 # Calculate pixel-wise performance in explaining temporal extent
 
@@ -193,9 +191,9 @@ restrend_old <- rast("data/processed/raster/restrend_resids_old.tif") %>%
 restrend_old_resids <- subset(restrend_old, str_detect(names(restrend_old), "resid"))
 restrend_old_preds <- gpp_actual_legacy - restrend_old_resids
 
-# restrend_new <- rast("data/processed/raster/restrend.tif")
-# restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
-# restrend_new_preds <- gpp_actual - restrend_new_resids
+restrend_new <- rast("data/processed/raster/restrend.tif")
+restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
+restrend_new_preds <- gpp_actual - restrend_new_resids
 
 calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
@@ -217,7 +215,7 @@ perf_new_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
 perf_new_subset_temporal <- calc_performance_raster(gpp_actual_subset, gpp_pred_subset)
 perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
 perf_restrend_old_temporal <- calc_performance_raster(gpp_actual_legacy, restrend_old_preds)
-# perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
+perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
 
 writeRaster(perf_new_full_temporal,
             "data/processed/raster/temporal_performance_full_new.tif",
@@ -234,6 +232,7 @@ writeRaster(perf_restrend_old_temporal,
 # writeRaster(perf_restrend_new_temporal,
 #             "data/processed/raster/temporal_performance_restrend_new.tif",
 #             overwrite = TRUE)
+
 
 perf_new_full_temporal <- rast("data/processed/raster/temporal_performance_full_new.tif")
 perf_new_subset_temporal <- rast("data/processed/raster/temporal_performance_new.tif")
@@ -467,8 +466,9 @@ tmap_save(rpi_mae_diff_map, "results/figures/rpi_mae_diff_map.png",
 tmap_save(rpi_rsq_diff_map, "results/figures/rpi_rsq_diff_map.png",
           width = 12, height = 12, units = "cm", dpi = 300)
 
-
 ## Plot overlapping study area
+
+# Calculate overall performance in explaining spatial patterns in mean GPP
 
 legacy_sa <- !is.na(rpi_rast_legacy$potential_gpp_predicted.2000)
 new_sa <- !is.na(rpi_rast$potential_gpp_predicted.2000)
