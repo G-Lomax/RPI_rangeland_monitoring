@@ -25,6 +25,8 @@ library(tictoc)
 # Visualisation
 library(ggplot2)
 library(tmap)
+library(grid)
+library(patchwork)
 library(ggthemes)
 library(ggpmisc)
 library(gratia)
