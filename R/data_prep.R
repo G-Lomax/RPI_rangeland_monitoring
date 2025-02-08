@@ -142,3 +142,25 @@ tidy_annual_vars <- function(data, delim = ".") {
   
   tidy_data
 }
+
+
+#' @title Capitalise string
+#' @description Capitalises the first letter of a string or of each word
+#' 
+#' @usage capitalise_string(string, first = TRUE)
+#' 
+#' @param string character string to capitalise
+#' @param first logical. Capitalise only the first letter in the string or the
+#' first letter of all words.
+
+capitalise_string <- function(string, first = TRUE) {
+  if (first == TRUE) {
+    s <- string
+  } else {
+    s <- strsplit(string, " ")
+  }
+  
+  s2 <- map(s, function(p) paste(toupper(substring(p, 1, 1)), substring(p, 2),
+        sep = "", collapse = " "))
+  unlist(s2)
+}
