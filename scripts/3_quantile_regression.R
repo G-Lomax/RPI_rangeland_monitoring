@@ -39,7 +39,7 @@ if(!file.exists("data/processed/raster/dynamic_covariates.tif")) {
   dynamic_covariates <- rast("data/processed/raster/dynamic_covariates.tif")
 }
 
-dist_to_river <- rast(paste0("data/processed/raster/dist_to_river_", MIN_STREAM_ORDER, ".tif"))
+dist_to_river <- rast(paste0("data/processed/raster/dist_to_river/dist_to_river_", MIN_STREAM_ORDER, ".tif"))
 
 names(dist_to_river) <- "dist_to_river"
 
