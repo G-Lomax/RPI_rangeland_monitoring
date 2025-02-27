@@ -61,8 +61,8 @@ density_plot_sp <- ggplot(data_with_quantiles, aes(x = quantile_pred, y = GPP)) 
         legend.background = element_rect(fill = "transparent")) +
   xlim(0, 16) +
   ylim(0, 16) +
-  labs(x = expression(atop("Potential GPP", (kg~C~m^-2~yr^-1))),
-       y = expression(atop("Actual GPP", (kg~C~m^-2~yr^-1))),
+  labs(x = expression(atop("Potential GPP", (g~C~m^-2~yr^-1))),
+       y = expression(atop("Actual GPP", (g~C~m^-2~yr^-1))),
        fill = "Number of points")
 
 ggsave(
@@ -147,15 +147,15 @@ rpi_rast_legacy_crop <- rpi_rast_legacy %>%
 rpi_rast_crop <- rpi_rast[[1:nlyr(rpi_rast_legacy_crop)]] %>%
   mask(rpi_rast_legacy_crop)
 
-rpi_df <- rpi_rast_crop %>%
-  as.data.frame(cells = TRUE) %>%
-  tidy_annual_vars() %>%
-  drop_na()
-
-rpi_legacy_df <- rpi_rast_legacy_crop %>%
-  as.data.frame(cells = TRUE) %>%
-  tidy_annual_vars() %>%
-  drop_na()
+# rpi_df <- rpi_rast_crop %>%
+#   as.data.frame(cells = TRUE) %>%
+#   tidy_annual_vars() %>%
+#   drop_na()
+# 
+# rpi_legacy_df <- rpi_rast_legacy_crop %>%
+#   as.data.frame(cells = TRUE) %>%
+#   tidy_annual_vars() %>%
+#   drop_na()
 
 
 # Calculate performance metrics for current and legacy model
@@ -171,8 +171,8 @@ calc_performance <- function(truth, predicted, na.rm = FALSE) {
 
 }
 
-perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
-perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
+# perf_full <- calc_performance(rpi_df$GPP, rpi_df$gpp_predicted)
+# perf_legacy <- calc_performance(rpi_legacy_df$GPP, rpi_legacy_df$gpp_predicted)
 
 # Calculate pixel-wise performance in explaining temporal extent
 
@@ -191,9 +191,9 @@ restrend_old <- rast("data/processed/raster/restrend_resids_old.tif") %>%
 restrend_old_resids <- subset(restrend_old, str_detect(names(restrend_old), "resid"))
 restrend_old_preds <- gpp_actual_legacy - restrend_old_resids
 
-restrend_new <- rast("data/processed/raster/restrend.tif")
-restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
-restrend_new_preds <- gpp_actual - restrend_new_resids
+# restrend_new <- rast("data/processed/raster/restrend.tif")
+# restrend_new_resids <- subset(restrend_new, str_detect(names(restrend_new), "resid"))
+# restrend_new_preds <- gpp_actual - restrend_new_resids
 
 calc_performance_raster <- function(truth, predicted, na.rm = FALSE) {
   
@@ -215,7 +215,7 @@ perf_new_full_temporal <- calc_performance_raster(gpp_actual, gpp_pred)
 perf_new_subset_temporal <- calc_performance_raster(gpp_actual_subset, gpp_pred_subset)
 perf_legacy_temporal <- calc_performance_raster(gpp_actual_legacy, gpp_pred_legacy)
 perf_restrend_old_temporal <- calc_performance_raster(gpp_actual_legacy, restrend_old_preds)
-perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
+# perf_restrend_new_temporal <- calc_performance_raster(gpp_actual, restrend_new_preds)
 
 writeRaster(perf_new_full_temporal,
             "data/processed/raster/temporal_performance_full_new.tif",
@@ -249,12 +249,12 @@ performance_df_old <- as.data.frame(perf_new_subset_temporal, cells = TRUE) %>%
   separate_wider_delim(name, ".", names = c("measure", "version")) %>%
   drop_na()
 
-performance_df_restrend <- as.data.frame(perf_new_full_temporal, cells = TRUE) %>%
-  rename_with(~ paste0(.x, ".new_full"), -cell) %>%
-  left_join(as.data.frame(perf_restrend_new_temporal, cells = TRUE) %>% rename_with(~paste0(.x, ".restrend"), -cell)) %>%
-  pivot_longer(-cell) %>%
-  separate_wider_delim(name, ".", names = c("measure", "version")) %>%
-  drop_na()
+# performance_df_restrend <- as.data.frame(perf_new_full_temporal, cells = TRUE) %>%
+#   rename_with(~ paste0(.x, ".new_full"), -cell) %>%
+#   left_join(as.data.frame(perf_restrend_new_temporal, cells = TRUE) %>% rename_with(~paste0(.x, ".restrend"), -cell)) %>%
+#   pivot_longer(-cell) %>%
+#   separate_wider_delim(name, ".", names = c("measure", "version")) %>%
+#   drop_na()
 
 measure_labels <- as_labeller(c(mae = "Mean~Absolute~Error~(g~C~m^-2~yr^-1)", rmse = "RMSE", rsq = "R^2"), label_parsed)
 
@@ -275,30 +275,30 @@ temporal_performance_hist <- performance_df_old %>%
   geom_vline(xintercept = 0, colour = "grey10") +
   labs(x = "Value", y = "Density", fill = "Version")
 
-temporal_performance_hist_restrend <- performance_df_restrend %>%
-  filter(measure != "rmse") %>%
-  mutate(version = ordered(version, levels = c("restrend", "new_full"))) %>%
-  arrange(version) %>%
-  ggplot(aes(x = value, fill = version)) +
-  geom_density(alpha = 0.6, kernel = "rectangular") +
-  facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free", labeller = measure_labels) +
-  theme_bw() +
-  scale_fill_brewer(palette = "Set1", labels = c("RESTREND", "RPI v2")) +
-  ggh4x::facetted_pos_scales(x = list(
-    measure == "mae" ~ scale_x_continuous(limits = c(0, 1500)),
-    measure == "rmse" ~ scale_x_continuous(limits = c(0, 1500)),
-    measure == "rsq" ~ scale_x_continuous(limits = c(-0.5, 1))
-  )) +
-  geom_vline(xintercept = 0, colour = "grey10") +
-  labs(x = "Value", y = "Density", fill = "Method")
+# temporal_performance_hist_restrend <- performance_df_restrend %>%
+#   filter(measure != "rmse") %>%
+#   mutate(version = ordered(version, levels = c("restrend", "new_full"))) %>%
+#   arrange(version) %>%
+#   ggplot(aes(x = value, fill = version)) +
+#   geom_density(alpha = 0.6, kernel = "rectangular") +
+#   facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free", labeller = measure_labels) +
+#   theme_bw() +
+#   scale_fill_brewer(palette = "Set1", labels = c("RESTREND", "RPI v2")) +
+#   ggh4x::facetted_pos_scales(x = list(
+#     measure == "mae" ~ scale_x_continuous(limits = c(0, 1500)),
+#     measure == "rmse" ~ scale_x_continuous(limits = c(0, 1500)),
+#     measure == "rsq" ~ scale_x_continuous(limits = c(-0.5, 1))
+#   )) +
+#   geom_vline(xintercept = 0, colour = "grey10") +
+#   labs(x = "Value", y = "Density", fill = "Method")
 
 ggsave("results/figures/rpi_version_performance_hist.png",
        temporal_performance_hist,
        width = 16, height = 16, units = "cm", dpi = 250)
 
-ggsave("results/figures/rpi_restrend_performance_hist.png",
-       temporal_performance_hist_restrend,
-       width = 16, height = 16, units = "cm", dpi = 250)
+# ggsave("results/figures/rpi_restrend_performance_hist.png",
+#        temporal_performance_hist_restrend,
+#        width = 16, height = 16, units = "cm", dpi = 250)
 
 # Calculate overall performance in explaining spatial patterns in mean GPP
 
@@ -322,39 +322,39 @@ fill <- tm_shape(ke_tz, is.main = FALSE) +
 borders <- tm_shape(ke_tz) +
   tm_borders(col = "black")
 
-rpi_old_mae_map <- fill +
-  tm_shape(perf_legacy_temporal$mae, is.main = TRUE) +
-  tm_raster(
-    col.scale = tm_scale_continuous(
-      limits = c(0, 1500),
-      values = ("oranges"),
-      outliers.trunc = c(TRUE, TRUE)
-    ),
-    col.legend = tm_legend(
-      title = "MAE (kg C m-2 yr-1)",
-      reverse = TRUE,
-      frame = FALSE
-    )
-  ) +
-  borders +
-  tm_layout(frame = FALSE)
-
-rpi_new_mae_map <- fill +
-  tm_shape(perf_new_subset_temporal$mae, is.main = TRUE) +
-  tm_raster(
-    col.scale = tm_scale_continuous(
-      limits = c(0, 1500),
-      values = ("oranges"),
-      outliers.trunc = c(TRUE, TRUE)
-    ),
-    col.legend = tm_legend(
-      title = "MAE (kg C m-2 yr-1)",
-      reverse = TRUE,
-      frame = FALSE
-    )
-  ) +
-  borders +
-  tm_layout(frame = FALSE)
+# rpi_old_mae_map <- fill +
+#   tm_shape(perf_legacy_temporal$mae, is.main = TRUE) +
+#   tm_raster(
+#     col.scale = tm_scale_continuous(
+#       limits = c(0, 1500),
+#       values = ("oranges"),
+#       outliers.trunc = c(TRUE, TRUE)
+#     ),
+#     col.legend = tm_legend(
+#       title = "MAE (g C m-2 yr-1)",
+#       reverse = TRUE,
+#       frame = FALSE
+#     )
+#   ) +
+#   borders +
+#   tm_layout(frame = FALSE)
+# 
+# rpi_new_mae_map <- fill +
+#   tm_shape(perf_new_subset_temporal$mae, is.main = TRUE) +
+#   tm_raster(
+#     col.scale = tm_scale_continuous(
+#       limits = c(0, 1500),
+#       values = ("oranges"),
+#       outliers.trunc = c(TRUE, TRUE)
+#     ),
+#     col.legend = tm_legend(
+#       title = "MAE (g C m-2 yr-1)",
+#       reverse = TRUE,
+#       frame = FALSE
+#     )
+#   ) +
+#   borders +
+#   tm_layout(frame = FALSE)
 
 rpi_best_mae <- which.min(c(perf_legacy_temporal$mae, perf_new_subset_temporal$mae))
 rpi_best_rsq <- which.max(c(perf_legacy_temporal$rsq, perf_new_subset_temporal$rsq))
@@ -369,8 +369,8 @@ generate_performance_map <- function(performance_rast, metric, palette) {
   }
   
   label_lookup <- c(
-    mae = expression(atop("MAE", (kg~C~m^-2~yr^-1))),
-    rmse = expression("RMSE ("~kg^2~m^-4~yr^-2~")"),
+    mae = expression(atop("MAE", (g~C~m^-2~yr^-1))),
+    rmse = expression("RMSE ("~g^2~m^-4~yr^-2~")"),
     rsq = expression(R^2)
   )
   
@@ -432,7 +432,7 @@ rpi_mae_diff_map <- fill +
       limits = c(-300, 300), values = "pu_or", midpoint = 0, outliers.trunc = c(TRUE, TRUE)
     ),
     col.legend = tm_legend(
-      reverse = TRUE, title = expression(atop("MAE difference", (kg~C~m^-2~yr^-1))), frame = FALSE
+      reverse = TRUE, title = expression(atop("MAE difference", (g~C~m^-2~yr^-1))), frame = FALSE
     )
   ) +
   borders +
@@ -465,6 +465,41 @@ tmap_save(rpi_mae_diff_map, "results/figures/rpi_mae_diff_map.png",
           width = 12, height = 12, units = "cm", dpi = 300)
 tmap_save(rpi_rsq_diff_map, "results/figures/rpi_rsq_diff_map.png",
           width = 12, height = 12, units = "cm", dpi = 300)
+
+## Histograms
+
+temporal_performance_hist_mae <- performance_df_old %>%
+  filter(measure == "mae") %>%
+  mutate(version = ordered(version, levels = c("old", "new_subset"))) %>%
+  arrange(version) %>%
+  ggplot(aes(x = value, fill = version)) +
+  geom_density(alpha = 0.5, kernel = "rectangular") +
+  # facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free", labeller = measure_labels) +
+  theme_classic() +
+  scale_fill_manual(values = c("orange3", "purple3"), labels = c("RPI v1", "RPI v2")) +
+  # scale_fill_brewer(palette = "Set1", labels = c("RPI v1", "RPI v2")) +
+  coord_cartesian(xlim = c(0, 1500)) +
+  geom_vline(xintercept = 0, colour = "grey10") +
+  labs(x = expression(MAE~(g~C~m^-2~yr^-1~)), y = "", fill = "Version")
+
+temporal_performance_hist_rsq <- performance_df_old %>%
+  filter(measure == "rsq") %>%
+  mutate(version = ordered(version, levels = c("old", "new_subset"))) %>%
+  arrange(version) %>%
+  ggplot(aes(x = value, fill = version)) +
+  geom_density(alpha = 0.5, kernel = "rectangular") +
+  # facet_wrap(~measure, ncol = 1, nrow = 3, scales = "free", labeller = measure_labels) +
+  theme_classic() +
+  scale_fill_manual(values = c("orange3", "purple3"), labels = c("RPI v1", "RPI v2")) +
+  # scale_fill_brewer(palette = "Set1", labels = c("RPI v1", "RPI v2")) +
+  coord_cartesian(xlim = c(-0.5, 1)) +
+  geom_vline(xintercept = 0, colour = "grey10") +
+  labs(x = expression(R^2), y = "", fill = "Version")
+
+ggsave("results/figures/perf_hist_mae.png", temporal_performance_hist_mae,
+       width = 12, height = 5, units = "cm", dpi = 300)
+ggsave("results/figures/perf_hist_rsq.png", temporal_performance_hist_rsq,
+       width = 12, height = 5, units = "cm", dpi = 300)
 
 ## Plot overlapping study area
 
