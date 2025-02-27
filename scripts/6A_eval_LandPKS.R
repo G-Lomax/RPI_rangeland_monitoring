@@ -242,7 +242,7 @@ rpi_lpks <- rpi_map[[paste0("rpi.", as.character(2014:2022))]]
 
 # With grid showing density of points
 
-density_grid <- rpi[[1]] %>% aggregate(100, fun = "mean", na.rm = TRUE)
+density_grid <- rpi_map[[1]] %>% aggregate(100, fun = "mean", na.rm = TRUE)
 
 lpks_raster <- map(2014:2022, function(n) {
   
@@ -265,8 +265,7 @@ year_n <- landpks_rpi_gpp %>%
   summarise(hYear = mean(hYear)) %>%
   count(hYear)
 
-panel_labels <- paste0(year_n$hYear, " (", year_n$n, ")")
-
+panel_labels <- paste0(year_n$hYear, " (n=", year_n$n, ")")
 
 lpks_grid_maps <- tm_shape(ke_tz, is.main = FALSE) +
   tm_fill("grey90") +
@@ -773,36 +772,40 @@ ggplot(landpks_trend, aes(x = rpi_trend, y = bare_trend)) +
 
 
 
-# # Path diagrams
-# 
-# # Group and join such that only plots within 100 m of each other in the same cell
-# # are retained (with the plot with the largest number of nearby plots in the 
-# # same cell retained as the base plot for that cell)
-# 
-# # Filter to one row per sample and calculate number of samples in each cell
-# landpks_pre_clustered <- landpks_rpi_gpp %>%
-#   group_by(sample_id) %>%
-#   slice_head(n = 1) %>%
-#   select(Name, sample_id, cell, ObservationDate_GMT, hYear, days_in_hyear, geometry) %>%
-#   group_by(cell) %>%
-#   mutate(n_plots = n())
-# 
-# # Spatial join with a 100m buffered version of all points, keeping those within the
-# # same cell and those with at least two points.
-# landpks_clustered <- st_join(landpks_pre_clustered, landpks_pre_clustered %>% st_buffer(dist = set_units(100, "m")), join = st_within) %>%
-#   filter(cell.x == cell.y) %>%
-#   group_by(cell.x,hYear) 
-# 
-# landpks_clustered_base <- landpks_clustered %>%
-#   group_by(sample_id.x, cell.x) %>%
-#   summarise(match_list = list(sample_id.y), n = length(unique(sample_id.y))) %>%
-#   filter(n > 1) %>%
-#   arrange(desc(n), .by_group = TRUE) %>%
-#   slice_head(n = 1)
-# 
-# ggplot(landpks_multitemporal, aes(x = herb, y = GPP, colour = as.factor(cell))) +
-#   geom_path(show.legend = FALSE) +
-#   theme_bw() +
-#   labs(x = "% Herbaceous", y = expression(GPP~(g~C~m^-2~yr^-1)))
-# 
-#          
+# Path diagrams
+
+# Group and join such that only plots within 100 m of each other in the same cell
+# are retained (with the plot with the largest number of nearby plots in the
+# same cell retained as the base plot for that cell)
+
+# Filter to one row per sample and calculate number of samples in each cell
+landpks_pre_clustered <- landpks_rpi_gpp %>%
+  group_by(sample_id) %>%
+  slice_head(n = 1) %>%
+  select(Name, sample_id, cell, ObservationDate_GMT, hYear, days_in_hyear, geometry) %>%
+  group_by(cell) %>%
+  mutate(n_plots = n())
+
+# Spatial join with a 100m buffered version of all points, keeping those within the
+# same cell and those with at least two points.
+landpks_clustered <- st_join(landpks_pre_clustered, landpks_pre_clustered %>% st_buffer(dist = set_units(100, "m")), join = st_within) %>%
+  filter(cell.x == cell.y) %>%
+  st_drop_geometry()
+
+landpks_clustered_base <- landpks_clustered %>%
+  group_by(sample_id.x, cell.x) %>%
+  summarise(match_list = list(sample_id.y), n = length(unique(sample_id.y))) %>%
+  filter(n > 1) %>%
+  arrange(desc(n), .by_group = TRUE) %>%
+  slice_head(n = 1)
+
+landpks_cell_groups <- landpks_clustered_base %>%
+  group_by(cell.x) %>%
+  unnest(match_list) %>%
+  left_join(landpks_rpi_gpp %>% nest(sample_id, cell), by = c("cell.x" = "cell", "match_list" = "sample_id"))
+
+ggplot(landpks_multitemporal, aes(x = herb, y = GPP, colour = as.factor(cell))) +
+  geom_path(show.legend = FALSE) +
+  theme_bw() +
+  labs(x = "% Herbaceous", y = expression(GPP~(g~C~m^-2~yr^-1)))
+
