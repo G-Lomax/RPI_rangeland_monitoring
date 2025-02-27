@@ -128,22 +128,6 @@ rpi_map_nakuru <- tm_shape(rpi_nakuru[[13:20]]) +
   tm_check_fix()
 
 rpi_map_nakuru
-  
-## 5a: Difference in differences analysis
-
-did_ts <- np_ts %>%
-  filter(year >= 2013 & year <= 2018) %>%
-  mutate(nakuru = (NAME == "Lake Nakuru"),
-         after = (year > 2015)) %>%
-  group_by(after, nakuru) %>%
-  mutate(did = after * nakuru)
-
-did <- lm(rpi ~ NAME + after + did, data = did_ts)
-
-
-# Now controlling for pre-event trends
-
-
 
 ## 5: Synthetic control ----
 
@@ -151,9 +135,9 @@ np_ts_augsynth <- np_ts %>%
   # filter(DESIG_ENG == "National Park") %>%
   mutate(treated = ifelse(NAME == "Lake Nakuru" & year > 2015, 1, 0))
 
-rpi_synth <- augsynth::augsynth(rpi ~ treated, NAME, year, np_ts_augsynth, t_int = 2016, progfunc = "Ridge")
+rpi_synth <- augsynth::augsynth(rpi ~ treated, NAME, year, np_ts_augsynth, t_int = 2016, progfunc = "Ridge", scm = TRUE)
 
-gpp_synth <- augsynth::augsynth(GPP ~ treated, NAME, year, np_ts_augsynth, t_int = 2016, progfunc = "Ridge")
+gpp_synth <- augsynth::augsynth(GPP ~ treated, NAME, year, np_ts_augsynth, t_int = 2016, progfunc = "Ridge", scm = TRUE)
 
 # Plot actual and predicted RPI and GPP with CI
 
