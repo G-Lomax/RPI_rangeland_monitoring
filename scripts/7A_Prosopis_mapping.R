@@ -125,7 +125,7 @@ cover_frac_df <- as.data.frame(cover_frac_combined, na.rm = TRUE, cells = TRUE, 
 # )
 
 cover_frac_rpi_mean <- lm(
-  rpi_mean ~ 0 + `Vachellia spp.` + `Cynodon plectostachyus` + `Ficus sur` + `General Control` + `Grass Control` +
+  rpi_mean ~ 0 + `Vachellia spp.` + `Cynodon plectostachyus` + `Ficus sur` + `Sparse Vegetation` + `Grass Control` +
     `Mixed Vegetation Control` + `Neltuma spp.` + `Sorghum bicolor` + `Sporobolus cordofanus`,
   data = cover_frac_df
 )
@@ -160,12 +160,12 @@ cover_frac_rpi_mean <- lm(
 # Partial residual plot showing slope/effect of Neltuma vs. other covers
 
 neltuma_resids <- cover_frac_df %>%
-  mutate(resids_mean= residuals(cover_frac_rpi_mean),
-         partial_resids_mean =
-           resids_mean +
+  mutate(resids= residuals(cover_frac_rpi_mean),
+         partial_resids_neltuma =
+           resids +
            `Neltuma spp.` * coef(cover_frac_rpi_mean)[["`Neltuma spp.`"]])
 
-partial_resid_plot <- ggplot(neltuma_resids, aes(x = `Neltuma spp.`, y = partial_resids_mean)) +
+partial_resid_plot <- ggplot(neltuma_resids, aes(x = `Neltuma spp.`, y = partial_resids_neltuma)) +
   geom_point(size = 0.5, alpha = 0.3) +
   # geom_abline(
   #   slope = coef(cover_frac_rpi_mean)[["`Neltuma spp.`"]],
@@ -205,6 +205,15 @@ parameter_plot <- ggplot(model_df, aes(y = reorder(label, Estimate))) +
 ggsave("results/figures/lc_mean_parameter_plot.png",
        parameter_plot,
        width = 14, height = 10, units = "cm", dpi = 200)
+
+# Evaluate R-squared (not correct from summary() due to the way R calculates
+# R-squared for a zero-intercept model)
+
+neltuma_resids %>%
+  mutate(mean_resids = rpi_mean - mean(rpi_mean),
+         mean_resids_sq = mean_resids ^ 2,
+         resids_sq = resids ^ 2) %>%
+  summarise(rsq = 1 - (sum(resids_sq) / sum(mean_resids_sq)))
 
 ## 5. Assess mean RPI at "pure" presence points ----
 
